@@ -1,0 +1,18 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+
+#include "v5.h"
+#include "v5_vcs.h"
+//
+using namespace vex;
+vex::brain Brain;
+vex::motor FrontLeft (vex::PORT1, vex::gearSetting::ratio18_1,false);
+vex::motor FrontRight (vex::PORT10, vex::gearSetting::ratio18_1,true);
+vex::motor BackLeft (vex::PORT11, vex::gearSetting::ratio18_1,false);
+vex::motor BackRight (vex::PORT20, vex::gearSetting::ratio18_1,true);
+vex::motor LiftRight (vex::PORT4, vex::gearSetting::ratio18_1,true);
+vex::motor LiftLeft (vex::PORT9, vex::gearSetting::ratio18_1,false);
+vex::controller Controller1;
+vex::competition Competition;
