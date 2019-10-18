@@ -1,4 +1,5 @@
- #include "robot-config.h"
+#include "vex.h"
+
 // ---------------------------------------------------------------->>> BEGIN BRAIN BUTTON CODE  <<<
 
 /*--------------------------------------------------------------------------------------------------
@@ -56,6 +57,8 @@ findButton(  int16_t xpos, int16_t ypos ) {
     }
     return (-1);
 }
+
+
 
 /*-----------------------------------------------------------------------------*/
 /** @brief      Init button states                                             */
@@ -190,26 +193,16 @@ void turnDegrees(int degrees){
 }
 
 void driveTurn(int speed){
-    BackLeft.spin(directionType::fwd,speed,velocityUnits::pct);
-    FrontLeft.spin(directionType::fwd,speed,velocityUnits::pct);
-    BackRight.spin(directionType::fwd,speed,velocityUnits::pct);
-    FrontRight.spin(directionType::fwd,speed,velocityUnits::pct);
+    DriveMotors.spin(directionType::fwd,speed,velocityUnits::pct);
 }
 void driveStop(){
-    BackLeft.stop(brakeType::brake);
-    FrontLeft.stop(brakeType::brake);
-    BackRight.stop(brakeType::brake);
-    FrontRight.stop(brakeType::brake);
+    DriveMotors.stop(brakeType::brake);
 }
 void driveHold(){
-    BackLeft.stop(brakeType::hold);
-    FrontLeft.stop(brakeType::hold);
-    BackRight.stop(brakeType::hold);
-    FrontRight.stop(brakeType::hold);
+    DriveMotors.stop(brakeType::hold);
 }
-void pre_auton( void ) {
-  // All activities that occur before the competition starts
-  // Example: clearing encoders, setting servo positions, ...
+void preAuton( void ) {
+    LiftMotors.setPosition(0, rotationUnits::rev);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -250,7 +243,10 @@ void autonomous( void ) {
     else if(!Back){            
         if(!Alt){             Brain.Screen.printAt(90,135,"FRONT MAIN");
 //FRONT MAIN    
+DriveBase.driveFor(directionType::fwd, 6, distanceUnits::in, 50, velocityUnits::pct);
 
+DriveBase.turnFor(20, rotationUnits::deg);
+ClawMotor.rotateTo(.5, rotationUnits::rev);
 
         }
         else{Brain.Screen.printAt(90,135,"FRONT ALT");
@@ -272,47 +268,70 @@ void autonomous( void ) {
         }
     }
       
-   
+  
+  }
     
 
-}
 
 
 
-
-/*----------------------------------------------------------------------------*/
-/*                                                                            */
-/*                              User Control Task                             */
-/*                                                                            */
-/*  This task is used to control your robot during the user control phase of  */
-/*  a VEX Competition.                                                        */
-/*                                                                            */
-/*  You must modify the code to add your own robot specific commands here.    */
-/*----------------------------------------------------------------------------*/
-
+/*
+/_    _
+| |  | |
+| |  | |  ___    ___   _ __
+| |  | | / __|  / _ \ | '__|
+| |__| | \__ \ |  __/ | |
+\\____/  |___/  \___| |_|
+*/
 void usercontrol( void ) {
-    
+  LiftMotors.setPosition(0, rotationUnits::rev);
     while (true){
-      
+        double liftPosition=LiftRight.position(rotationUnits::rev);
+        Brain.Screen.printAt(5, 15, true, "lift motor position %f2",liftPosition);
+  //    brain.screen.printAt()
+        channel2 = Controller1.Axis2.position(percentUnits::pct);
+        channel3 = Controller1.Axis3.position(percentUnits::pct);
+        mapped2 = (((channel2)*(channel2)*(channel2))/12500);
+        mapped3 = (((channel3)*(channel3)*(channel3))/12500);
 //Drive        
-        BackLeft.spin(vex::directionType::fwd, Controller1.Axis3.position(percentUnits::pct), velocityUnits::pct);
-        FrontLeft.spin(vex::directionType::fwd, Controller1.Axis3.position(percentUnits::pct), velocityUnits::pct);
-        BackRight.spin(vex::directionType::fwd, Controller1.Axis2.position(percentUnits::pct), velocityUnits::pct);
-        FrontRight.spin(vex::directionType::fwd, Controller1.Axis2.position(percentUnits::pct), velocityUnits::pct);
+        BackLeft.spin(vex::directionType::fwd, mapped3, velocityUnits::pct);
+        FrontLeft.spin(vex::directionType::fwd, mapped3, velocityUnits::pct);
+        BackRight.spin(vex::directionType::fwd, mapped2, velocityUnits::pct);
+        FrontRight.spin(vex::directionType::fwd, mapped2, velocityUnits::pct);
 
 //Lift
-        if(Controller1.ButtonUp.pressing()){
+        if(Controller1.ButtonR1.pressing() && liftPosition >= -9){
           LiftRight.spin(vex::directionType::fwd,-100, pct);
           LiftLeft.spin(vex::directionType::fwd,-100, pct);
         }
-        else if(Controller1.ButtonDown.pressing()){
+        else if(Controller1.ButtonR2.pressing() && !LiftStop.pressing()){
           LiftLeft.spin(vex::directionType::fwd,100, pct);
           LiftRight.spin(vex::directionType::fwd,100, pct);
         }
         else{
+          LiftLeft.stop(brakeType::hold);
+          LiftRight.stop(brakeType::hold);
+        }
+  //claw
+        if(Controller1.ButtonL2.pressing()){
+          ClawMotor.spin(vex::directionType::fwd,100,velocityUnits::pct);
+        }
+        else if(Controller1.ButtonL1.pressing()){
+          ClawMotor.spin(vex::directionType::rev,100,velocityUnits::pct);
+        }
+        else{
+          ClawMotor.stop(brakeType(hold));
+        } 
+    //Quick Grab 
+       /* if(Controller1.ButtonA.pressed()){
+          LiftLeft.startRotateFor(700, vex::rotationUnits::deg,100, vex::velocityUnits::pct);
+          LiftRight.startRotateFor(700, vex::rotationUnits::deg,100, vex::velocityUnits::pct);
+        }
+        else{
           LiftLeft.stop();
           LiftRight.stop();
-        }
+        }*/
+        
     }
 }
 
@@ -331,7 +350,7 @@ int main() {
 //--------------------------------------------------------------------------------
     
     //Run the pre-autonomous function. 
-    pre_auton();
+    preAuton();
     
     //Set up callbacks for autonomous and driver control periods.
     Competition.autonomous( autonomous );
@@ -343,10 +362,3 @@ int main() {
     }    
        
 }
-
-    
-
-
-
-
-
